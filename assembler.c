@@ -247,7 +247,17 @@ char* ParseLine(const char* line) {
     char* finalString3 = (numTokens > 3) ? string3 : NULL;
     char* finalString4 = (numTokens > 4) ? string4 : NULL;
 
-    return EncodeInstruction(instruction, finalString1, finalString2, finalString3, finalString4);
+    char* binaryInstruction = EncodeInstruction(instruction, finalString1, finalString2, finalString3, finalString4);
+
+    char* formattedInstruction = malloc(36);
+    if (!formattedInstruction) {
+        perror("Memory allocation failed");
+        exit(EXIT_FAILURE);
+    }
+    snprintf(formattedInstruction, 36, "%.*s\n%.*s", 16, binaryInstruction, 16, binaryInstruction + 16);
+
+    free(binaryInstruction);
+    return formattedInstruction;
 }
 
 char* ReadAssemblyFile(const char* fileName) {
