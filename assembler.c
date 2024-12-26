@@ -52,8 +52,7 @@ void removeCommas(char* str) {
     *write = '\0';
 }
 
-
-char* DecimalToBinary(int decimal) {
+char* decimalToBinary(int decimal) {
     static char Str[17];
     for (int i = 15; i >= 0; i--) {
         Str[i] = (decimal & 1) ? '1' : '0';
@@ -63,7 +62,7 @@ char* DecimalToBinary(int decimal) {
     return Str;
 }
 
-char* HexToBinary(const char* hexadecimal) {
+char* hexToBinary(const char* hexadecimal) {
     static char binaryStr[17];
     int decimal = 0;
     int isNegative = 0;
@@ -79,16 +78,8 @@ char* HexToBinary(const char* hexadecimal) {
         decimal = -decimal;
     }
 
-    strcpy(binaryStr, DecimalToBinary(decimal));
+    strcpy(binaryStr, decimalToBinary(decimal));
     return binaryStr;
-}
-
-void intToBinary(int value, char* binary, int bits) {
-    for (int i = bits - 1; i >= 0; i--) {
-        binary[i] = (value & 1) ? '1' : '0';
-        value >>= 1;
-    }
-    binary[bits] = '\0';
 }
 
 char* EncodeOpcode(char* opcode) {
@@ -196,12 +187,12 @@ char* EncodeInstruction(char* opcode, char* string1, char* string2, char* string
         strncpy(binaryInstruction + 5, EncodeRegister(string1), 3);
         strncpy(binaryInstruction + 8, EncodeRegister(string2), 3);
 
-        char* immBinary = HexToBinary(string3);
+        char* immBinary = hexToBinary(string3);
         strncpy(binaryInstruction + 16, immBinary, 16);
     } else if (!strcmp(opcode, "ldm")) {
         strncpy(binaryInstruction + 5, EncodeRegister(string1), 3);
 
-        char* immBinary = HexToBinary(string2);
+        char* immBinary = hexToBinary(string2);
         strncpy(binaryInstruction + 16, immBinary, 16);
     } else if (!strcmp(opcode, "ldd")) {
         strncpy(binaryInstruction + 5, EncodeRegister(string1), 3);
@@ -210,7 +201,7 @@ char* EncodeInstruction(char* opcode, char* string1, char* string2, char* string
         sscanf(string2, "%15[^'('](%15[^')'])", offset, rsrc1);
         strncpy(binaryInstruction + 8, EncodeRegister(rsrc1), 3);
 
-        char* offsetBinary = HexToBinary(offset);
+        char* offsetBinary = hexToBinary(offset);
         strncpy(binaryInstruction + 16, offsetBinary, 16);
     } else if (!strcmp(opcode, "std")) {
         char offset[16] = "", rsrc2[16] = "";
@@ -219,7 +210,7 @@ char* EncodeInstruction(char* opcode, char* string1, char* string2, char* string
         strncpy(binaryInstruction + 8, EncodeRegister(string1), 3);
         strncpy(binaryInstruction + 11, EncodeRegister(rsrc2), 3);
 
-        char* offsetBinary = HexToBinary(offset);
+        char* offsetBinary = hexToBinary(offset);
         strncpy(binaryInstruction + 16, offsetBinary, 16);
     } else if (!strcmp(opcode, "push") || !strcmp(opcode, "out") || !strcmp(opcode, "jz") || !strcmp(opcode, "jn") || !strcmp(opcode, "jc") || !strcmp(opcode, "jmp") || !strcmp(opcode, "call")) {
         strncpy(binaryInstruction + 8, EncodeRegister(string1), 3);
@@ -317,6 +308,27 @@ void WriteBinaryFile(const char* filename, const char* binaryData) {
         exit(EXIT_FAILURE);
     }
 
-    fprintf(file, "%s", binaryData);
+    // Write header lines
+    fprintf(file, "// memory data file (do not edit the following line - required for mem load use)\n");
+    fprintf(file, "// instance=/mips_processor/u02/instructioncache\n");
+    fprintf(file, "// format=mti addressradix=d dataradix=b version=1.0 wordsperline=1\n");
+
+    int lineCount = 0;
+    const char* currentLine = binaryData;
+
+    while (*currentLine) {
+        const char* nextLine = strchr(currentLine, '\n');
+        if (!nextLine) break;
+
+        fprintf(file, "%d: %.*s\n", lineCount, (int)(nextLine - currentLine), currentLine);
+        currentLine = nextLine + 1;
+        lineCount++;
+    }
+
+    while (lineCount < 4096) {
+        fprintf(file, "%d: 0000000000000000\n", lineCount);
+        lineCount++;
+    }
+
     fclose(file);
 }

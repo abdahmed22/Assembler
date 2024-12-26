@@ -3,7 +3,7 @@
 #include "assembler.h"
 
 #define INPUT_FILE "data/test.asm"
-#define OUTPUT_FILE "data/test.bin"
+#define OUTPUT_FILE "data/test.mem"
 
 int main() {
     printf("Reading assembly file: %s\n", INPUT_FILE);
